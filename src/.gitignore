@@ -1,0 +1,7 @@
+# Ignore everything in this directory
+*
+# Except below file types
+!.gitignore
+!*.h
+!*.cpp
+!Makefile
