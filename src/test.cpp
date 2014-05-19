@@ -113,7 +113,7 @@ void System::read_input(const string& fname){
 				Test *t = new Test(tmp);
 				t->category = BIST;
 				t->core = c;
-				t->TAM_width = tam;
+				t->TAM_width = 0;
 				while(p = strtok(NULL, delim)){
 					if(strcmp(p, "length") == 0){
 						p = strtok(NULL, delim);
