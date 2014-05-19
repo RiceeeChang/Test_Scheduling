@@ -7,6 +7,6 @@
 
 using namespace std;
 
-long int lowerbound2(vector<Test*>& tests, const int& width);
+long int lowerbound(vector<Test*> tests, const int& width, const int& max_power);
 
 #endif
