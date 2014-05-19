@@ -3,10 +3,10 @@
 
 #include <vector>
 #include <algorithm>
-#include "Test.h"
+#include "test.h"
 
 using namespace std;
 
-int lowerbound2(vector<Test> tests, int width);
+long int lowerbound2(vector<Test*>& tests, const int& width);
 
 #endif
