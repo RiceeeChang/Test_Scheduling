@@ -19,16 +19,31 @@ void System::read_input(const string& fname){
 	char buf[200];
 	char *delim = " \t";
 	char *p;
+	int i;
+
+	strcpy(buf, fname.c_str());
+	p = strtok(buf, ".");
+	i = strlen(p) - 1;
+	while(i){
+		if(p[i] == '/')
+			break;
+		i--;
+	}
+	sys_name = p;
+	sys_name = sys_name.substr(i + 1);	
 
 	//parse system
 	fin.getline(buf, 200);//System
 	while(strcmp(buf, "System") != 0){
 		fin.getline(buf, 200);
 	}
-
+	
 	fin.getline(buf, 200);//begin
 	fin.getline(buf, 200);//TAM
 	while(strcmp(buf, "end") != 0){
+		if(strlen(buf) < 2){
+			fin.getline(buf, 200);
+		}
 		p = strtok(buf, delim);
 
 		if(strcmp(p, "TAM_width") == 0){
@@ -61,7 +76,7 @@ void System::read_input(const string& fname){
 		fin.getline(buf, 200);
 	}
 	fin.getline(buf, 200);
-
+	
 	//parse core
 	int c = 0;
 	string tmp;
@@ -73,10 +88,20 @@ void System::read_input(const string& fname){
 		if(tmp.find("Core") == -1){
 			continue;
 		}
-		c++;
+		
+		
+		//get core name
+		p = strtok(buf, delim);
+		p = strtok(NULL, delim);
+		tmp = p;
+		core_name.push_back(tmp);
+		
 		fin.getline(buf, 200);//begin
 		fin.getline(buf, 200);//TAM
 		while(strcmp(buf, "end") != 0){
+			if(strlen(buf) < 2){
+                        	fin.getline(buf, 200);
+                	}	
 			p = strtok(buf, delim);
 
 			if(strcmp(p, "TAM_width") == 0){
@@ -88,6 +113,7 @@ void System::read_input(const string& fname){
 				tmp = p;
 				Test *t = new Test(tmp);
 				t->category = External;
+
 				t->core = c;
 				t->TAM_width = tam;
 				t->partition = 1;
@@ -132,6 +158,7 @@ void System::read_input(const string& fname){
 			}
 			fin.getline(buf, 200);
 		}
+		c++;
 	}
 	fin.close();
 }
@@ -158,5 +185,48 @@ void System::print(){
 	}
 
 	cout << "Total number of tests = " << test.size() << endl;
+}
+
+void write_output(System& sys, Schedule& sch){
+
+	int i, j, c = 0;
+	string out = sys.sys_name + ".scheduling";
+	ofstream fout(out.c_str());
+
+	fout << "Schedule\nbegin\n\n";
+	fout << "\tTest_time " << sch.optimal_test_time << endl << endl;
+	
+	//TAM_assignment
+	for(i = 0; i < sys.core_name.size(); i++){
+		fout << "\tTAM_assignment " << sys.core_name[i]
+			<< " [" << sch.TAM_assignment[i].first
+			<< ":" << sch.TAM_assignment[i].second << "]\n";
+	}
+	fout << endl;
+	
+	//test
+	for(i = 0; i < sys.test.size(); i++){
+		if(sys.test[i]->core != c){
+			fout << endl;
+			c++;
+		}
+		
+		if(sys.test[i]->category == BIST){
+			fout << "\tBIST ";
+		}else{
+			fout << "\tExternal ";
+		}
+		fout << sys.core_name[sys.test[i]->core] << " "
+			<< sys.test[i]->name << " ";
+		//partition
+		for(j = 0; j < sch.timestamps[i].size(); j++){
+			fout << "(" << sch.timestamps[i][j].first << ", "
+			<< sch.timestamps[i][j].second << ")";
+		}
+		fout << endl;
+	}
+	fout << endl << "end" << endl;
+
+	fout.close();
 }
 

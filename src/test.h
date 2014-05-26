@@ -42,6 +42,7 @@ class System{
 		int sys_power;
 		vector< vector<string> > precedence;
 		vector<string> sys_resource;
+		vector<string> core_name;
 
 		vector<Test *> test;
 
@@ -53,5 +54,17 @@ class System{
 		//for debugging
 		void print();
 };
+
+class Schedule{
+
+	public:
+		int optimal_test_time;	
+		
+                vector<pair<int, int> > TAM_assignment;
+		vector<vector<pair<int, int> > > timestamps;
+
+};
+
+void write_output(System& sys, Schedule& sch);
 
 #endif
