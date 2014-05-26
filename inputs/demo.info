@@ -1,0 +1,42 @@
+System
+begin
+
+	TAM_width 24
+	Power 50
+	Precedence ext_5 > ext_2
+	Resource rsc_1
+end
+
+Core core_1
+begin
+	TAM_width 16
+	BIST bist_1 length 325 power 10 resource rsc_1
+	External ext_1 length 200 power 20
+end
+
+Core core_2
+begin
+	TAM_width 8
+	BIST bist_2 length 150 power 10 resource rsc_1
+	External ext_2 length 450 power 10 partition 2
+end
+
+Core core_3
+begin
+	TAM_width 8
+	BIST bist_3 length 300 power 10
+	External ext_3 length 150 power 10
+end
+
+Core core_4
+begin
+	TAM_width 8
+	External ext_4 length 400 power 20 partition 2
+end
+
+Core core_5
+begin
+	TAM_width 16
+	External ext_5 length 100 power 30
+end
+
