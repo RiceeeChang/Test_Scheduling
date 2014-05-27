@@ -65,6 +65,6 @@ class Schedule{
 
 };
 
-void write_output(System& sys, Schedule& sch);
+void write_output(const string& fname, System& sys, Schedule& sch);
 
 #endif

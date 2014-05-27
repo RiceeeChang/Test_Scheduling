@@ -21,6 +21,7 @@ void System::read_input(const string& fname){
 	char *p;
 	int i;
 
+	/*
 	strcpy(buf, fname.c_str());
 	p = strtok(buf, ".");
 	i = strlen(p) - 1;
@@ -31,6 +32,7 @@ void System::read_input(const string& fname){
 	}
 	sys_name = p;
 	sys_name = sys_name.substr(i + 1);	
+	*/
 
 	//parse system
 	fin.getline(buf, 200);//System
@@ -187,11 +189,10 @@ void System::print(){
 	cout << "Total number of tests = " << test.size() << endl;
 }
 
-void write_output(System& sys, Schedule& sch){
+void write_output(const string& fname, System& sys, Schedule& sch){
 
 	int i, j, c = 0;
-	string out = sys.sys_name + ".scheduling";
-	ofstream fout(out.c_str());
+	ofstream fout(fname.c_str());
 
 	fout << "Schedule\nbegin\n\n";
 	fout << "\tTest_time " << sch.optimal_test_time << endl << endl;

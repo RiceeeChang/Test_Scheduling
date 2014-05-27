@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
 		}
 		sch.timestamps.push_back(v);
 	}
-	write_output(sys, sch);
+	write_output(argv[2], sys, sch);
 
         return 0;
 }
