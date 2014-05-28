@@ -89,9 +89,10 @@ void System::read_input(const string& fname){
 		else if(strcmp(p, "Resource") == 0){
 			while(p = strtok(NULL, delim)){
 				string str = p;
-                                Bist* bist = new Bist();
 				sys_resource.push_back(str);
-                bists.insert(pair<string, Bist*>(str, bist));
+                // Add Rice
+                Bist* bist = new Bist();
+                bists.insert(map<string, Bist*>::value_type(str, bist));
 			}
 		}
 

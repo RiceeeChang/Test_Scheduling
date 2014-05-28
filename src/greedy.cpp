@@ -8,7 +8,17 @@
 
 using namespace std;
 
-int current_time = 0;
+int                current_time = 0;
+int                next_time = numeric_limits<int>::max();
+
+int                w_avail;
+int                p_avail;
+vector<Core*>      cores;
+map<string, Bist*> bists;
+vector<bool>       tam_bus;
+
+vector<Test*>      tests;
+vector<Test*>      scheduled;
 
 bool sortTest(const Test* tl, const Test* tr){
     if(tl->length != tr->length)
@@ -19,56 +29,86 @@ bool sortTest(const Test* tl, const Test* tr){
         return tl->TAM_width < tr->TAM_width;
 }
 
-void updateTest(Test*& test){
-    test->begin = current_time;
-    test->end = current_time + test->length;
+void assignTAM(vector<int>& core_bus){
+    for(int i = 0; i< core_bus.size(); ){
+        for(int j = 0; j<tam_bus.size(); j++){
+            if(!tam_bus[j])
+                core_bus[i++] = j;
+        }
+    }
+}
+
+void pushIntoScheduled(const int& p){
+    Test* t = tests[p];
+    t->begin = current_time;
+    t->end   = current_time + t->length;
+    
+    next_time   = current_time + t->length;
+    
+    p_avail    -= t->power;
+    w_avail    -= t->TAM_width;
+  
+    assignTAM(cores[t->core]->bus);
+ 
+    cores[t->core]->occupied    = true;
+    if(t->category == BIST){
+        bists[t->resource]->occupied = true;
+    }/*else{
+        for(int i = 0; i<cores[t->core]->bus.size(); i++)
+            tam_bus[cores[t->core]->bus[i]] = true;
+    }*/
+
+    scheduled.push_back(t);
+    tests.erase(tests.begin() + p);
+}
+
+void popFromScheduled(){
+     if(!scheduled.empty()){
+         Test* t = scheduled.back();
+         cores[t->core]->occupied    = false;
+         if(t->category == BIST){
+             bists[t->resource]->occupied = false;
+         }/*else{
+             for(int i = 0; i<cores[t->core]->bus.size(); i++)
+                 tam_bus[cores[t->core]->bus[i]] = false;
+         }*/
+         current_time  = t->end;
+         p_avail      += t->power;
+         w_avail      += t->TAM_width;
+         scheduled.pop_back();
+     }
+
+     if(!scheduled.empty())
+         next_time = scheduled.back()->end;
+     else
+         next_time = numeric_limits<int>::max();
 }
 
 int greedy(System system){
     // Setup
-    vector<Test*> tests = system.test;
-    int w_avail = system.sys_TAM_width;
-    int p_avail = system.sys_power;
-    vector<Core*> cores = system.cores;
-    map<string, Bist*> bists = bists;
-    vector<bool> tam_bus = system.tam_bus;
-
-    int next_time = numeric_limits<int>::max();
-    vector<Test*> scheduled;
+    tests     = system.test;
+    w_avail   = system.sys_TAM_width;
+    p_avail   = system.sys_power;
+    cores     = system.cores;
+    bists     = system.bists;
+    tam_bus   = system.tam_bus;
     
     sort(tests.begin(), tests.end(), sortTest);
 
-
     while(!tests.empty()){
-        Test* test = NULL;
-        int i;
+        bool notFindTestFlag = true;
         
-        for(i = tests.size()-1; i>=0 ; i--){
+        for(int i = tests.size()-1; i>=0 ; i--){
             if((tests[i]->power <= p_avail) && (tests[i]->TAM_width <= w_avail) && (current_time + tests[i]->length <= next_time)){
-                printf("Name = %s\n", tests[i]->name.c_str());
-                test = tests[i];
-                updateTest(tests[i]);
-                p_avail -= test->power;
-                w_avail -= test->TAM_width;
-                next_time = current_time + test->length;
-                scheduled.push_back(test);
-                tests.erase(tests.begin() + i);
+                //printf("Name = %s\n", tests[i]->name.c_str());
+                pushIntoScheduled(i);
+                notFindTestFlag = false;
                 break;
             }
         }
 
-        //printf("(P, W) = (%d, %d)\n", p_avail, w_avail);
-
-        if(test == NULL){
-            p_avail += scheduled.back()->power;
-            w_avail += scheduled.back()->TAM_width;
-            if(!scheduled.empty())
-                current_time = scheduled.back()->end;
-            scheduled.pop_back();
-            if(!scheduled.empty())
-                next_time = scheduled.back()->end;
-            else
-                next_time = numeric_limits<int>::max();
+        if(notFindTestFlag){
+            popFromScheduled();
         }
     }
 
