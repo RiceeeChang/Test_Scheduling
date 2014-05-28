@@ -13,7 +13,7 @@ clean   :
 	rm *.o ../bin/TestScheduler
 
 # optimized version
-bin/TestScheduler : main.o test.o lowerbound.o
+bin/TestScheduler : main.o test.o lowerbound.o greedy.o
 		$(CC) $^ -o $@
 
 main.o        : src/main.cpp src/lowerbound.h src/test.h
@@ -24,5 +24,6 @@ test.o            : src/test.cpp src/test.h
 lowerbound.o      : src/lowerbound.cpp src/lowerbound.h src/test.h
 		$(CC) $(CFLAGS) -c $< -o $@
 
-
+greedy.o          : src/greedy.cpp src/lowerbound.h src/test.h
+		$(CC) $(CFLAGS) -c $< -o $@
 

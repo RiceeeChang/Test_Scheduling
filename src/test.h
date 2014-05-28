@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <map>
 #include <string>
 #include <cstring>
 #include <cstdlib>
@@ -14,6 +15,19 @@ enum{
 };
 
 using namespace std;
+
+class Core{
+    public:
+        Core(const int& bits);
+        bool occupied;
+        vector<int> bus;
+};
+
+class Bist{
+    public:
+        Bist();
+        bool occupied;
+};
 
 class Test{
 
@@ -29,6 +43,11 @@ class Test{
 		int partition;
 		string resource;
 
+        // Rice Add
+        int begin;
+        int end;
+        bool scheduled;
+        bool complete;
 };
 
 class System{
@@ -53,6 +72,10 @@ class System{
 
 		//for debugging
 		void print();
+        // Rice Add
+        vector<Core*> cores;
+        map<string, Bist*> bists;
+        vector<bool> tam_bus;
 };
 
 class Schedule{

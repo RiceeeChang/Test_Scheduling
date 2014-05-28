@@ -1,8 +1,24 @@
 #include "test.h"
 
+Core::Core(const int& bits){
+    for(int i = 0; i< bits; i++)
+        bus.push_back(-1);
+    occupied = false;
+}
+
+Bist::Bist(){
+    occupied = false;
+}
+
 Test::Test(const string& n){
 
 	name = n;
+    
+    // Rice Add
+    begin = 0;
+    end = 0;
+    scheduled = false;
+    complete = false;
 }
 
 System::System(){}
@@ -51,6 +67,8 @@ void System::read_input(const string& fname){
 		if(strcmp(p, "TAM_width") == 0){
 			p = strtok(NULL, delim);
 			sys_TAM_width = atoi(p);
+            for(int i = 0; i<atoi(p); i++)
+                tam_bus.push_back(false);
 		}
 		else if(strcmp(p, "Power") == 0){
 			p = strtok(NULL, delim);
@@ -71,7 +89,9 @@ void System::read_input(const string& fname){
 		else if(strcmp(p, "Resource") == 0){
 			while(p = strtok(NULL, delim)){
 				string str = p;
+                                Bist* bist = new Bist();
 				sys_resource.push_back(str);
+                bists.insert(pair<string, Bist*>(str, bist));
 			}
 		}
 
@@ -97,7 +117,7 @@ void System::read_input(const string& fname){
 		p = strtok(NULL, delim);
 		tmp = p;
 		core_name.push_back(tmp);
-		
+
 		fin.getline(buf, 200);//begin
 		fin.getline(buf, 200);//TAM
 		while(strcmp(buf, "end") != 0){
@@ -109,6 +129,8 @@ void System::read_input(const string& fname){
 			if(strcmp(p, "TAM_width") == 0){
 				p = strtok(NULL, delim);
 				tam = atoi(p);
+                Core* core = new Core(atoi(p));
+                cores.push_back(core);
 			}
 			else if(strcmp(p, "External") == 0){ //External
 				p = strtok(NULL, delim);
