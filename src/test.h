@@ -43,11 +43,11 @@ class Test{
 		int partition;
 		string resource;
 
-        // Rice Add
-        int begin;
-        int end;
-        bool scheduled;
-        bool complete;
+	// Rice Add
+	int begin;
+	int end;
+	bool scheduled;
+	bool complete;
 };
 
 class System{
@@ -77,17 +77,5 @@ class System{
         map<string, Bist*> bists;
         vector<bool> tam_bus;
 };
-
-class Schedule{
-
-	public:
-		int optimal_test_time;	
-		
-                vector<pair<int, int> > TAM_assignment;
-		vector<vector<pair<int, int> > > timestamps;
-
-};
-
-void write_output(const string& fname, System& sys, Schedule& sch);
 
 #endif

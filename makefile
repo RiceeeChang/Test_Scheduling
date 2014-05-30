@@ -10,16 +10,18 @@ all     : bin/TestScheduler
 	@echo -n ""
 
 clean   :
-	rm *.o ../bin/TestScheduler
+	rm -f *.o ./bin/TestScheduler
 
 # optimized version
-bin/TestScheduler : main.o test.o lowerbound.o greedy.o
+bin/TestScheduler : main.o test.o schedule.o lowerbound.o greedy.o
 		$(CC) $^ -o $@
 
 main.o        : src/main.cpp src/lowerbound.h src/test.h
 		$(CC) $(CFLAGS) -c $< -o $@
 
 test.o            : src/test.cpp src/test.h
+		$(CC) $(CFLAGS) -c $< -o $@
+schedule.o        : src/schedule.cpp src/schedule.h src/test.h
 		$(CC) $(CFLAGS) -c $< -o $@
 lowerbound.o      : src/lowerbound.cpp src/lowerbound.h src/test.h
 		$(CC) $(CFLAGS) -c $< -o $@
