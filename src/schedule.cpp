@@ -19,7 +19,7 @@ void write_output(const string& fname, const System& sys, const Schedule& sch){
 	fout << endl;
 	
 	//test
-	int c = 0; 
+	TCoreIndex c = 0; 
 	for(size_t i = 0; i < sys.test.size(); i++){
 		if(sys.test[i]->core != c){
 			fout << endl;

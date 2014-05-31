@@ -29,6 +29,26 @@ void System::init(){}
 
 Test * System::getTestByName(const string& name){}
 
+TWidth
+System::getCoreWidth(const TCoreIndex& ci) const
+{
+	// TODO Low efficiency
+	for(size_t i=0; i<test.size(); ++i)
+		if(test[i]->category==External && test[i]->core==ci)
+			return test[i]->TAM_width;
+	return 0;
+}
+TTime
+System::getCoreExtTotalLength(const TCoreIndex& ci) const
+{
+	// TODO Low efficiency
+	TTime total_len = 0;
+	for(size_t i=0; i<test.size(); ++i)
+		if(test[i]->category==External && test[i]->core==ci)
+			total_len += test[i]->length;
+	return total_len;
+}
+
 void System::read_input(const string& fname){
 
 	ifstream fin(fname.c_str());

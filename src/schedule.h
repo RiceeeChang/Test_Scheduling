@@ -5,15 +5,22 @@
 #include <utility>
 #include <vector>
 
+#include "type_defs.h"
+
 class System;
 
 class Schedule{
-	typedef std::pair<int, int> Interval;
-	public:
-		int optimal_test_time;
+	typedef std::pair<TWidth, TWidth> BusBits;
+	typedef std::vector<BusBits> CoreAssignment;
 
-		std::vector<Interval> TAM_assignment;
-		std::vector<std::vector<Interval> > timestamps;
+	typedef std::pair<TTime, TTime> Interval;
+	typedef std::vector<Interval> TestSchedule;
+
+	public:
+		TTime optimal_test_time;
+
+		std::vector<BusBits> TAM_assignment;
+		std::vector<TestSchedule> timestamps;
 };
 
 void write_output(const std::string& fname, const System& sys, const Schedule& sch);

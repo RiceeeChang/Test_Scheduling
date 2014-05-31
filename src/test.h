@@ -9,6 +9,8 @@
 #include <cstring>
 #include <cstdlib>
 
+#include "type_defs.h"
+
 enum{
 	External,
 	BIST
@@ -56,6 +58,15 @@ class System{
 		System();
 		~System();
 
+		size_t getNumCores() const {return core_name.size();}
+		size_t getNumTests() const {return test.size();}
+		const Test& getTest(const size_t& i) const
+		{	return *test[i];}
+
+		TWidth getCoreWidth(const TCoreIndex&) const;
+		TTime getCoreExtTotalLength(const TCoreIndex&) const;
+
+	public:
 		string sys_name;
 		int sys_TAM_width;
 		int sys_power;

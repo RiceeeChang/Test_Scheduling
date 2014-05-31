@@ -11,7 +11,7 @@ using namespace std;
 namespace
 {
 
-// Functional Object for computing lower bound
+// Functional class for computing lower bound
 template <class TRectH, class TRectW>
 class LowerBoundFor2SP{
 private:
@@ -144,9 +144,9 @@ Algorithm::computeLowerBound() const
 	TTime lower_bound;
 
 	LowerBoundFor2SP<TTime, TWidth> lb_by_power;
-	for(size_t i=0; i<_system.test.size(); ++i)
+	for(size_t i=0; i<_system.getNumTests(); ++i)
 	{
-		const Test& ti = *_system.test[i];
+		const Test& ti = _system.getTest(i);
 		if(ti.power > 0)
 			lb_by_power.addRect(ti.length, ti.power);
 	}
@@ -154,11 +154,12 @@ Algorithm::computeLowerBound() const
 	TTime tmp_lower = lb_by_power.compute(_system.sys_power);
 
 	LowerBoundFor2SP<TTime, TWidth> lb_by_width;
-	for(size_t i=0; i<_system.test.size(); ++i)
+	for(size_t i=0; i<_system.getNumCores(); ++i)
 	{
-		const Test& ti = *_system.test[i];
-		if(ti.TAM_width > 0)
-			lb_by_width.addRect(ti.length, ti.TAM_width);
+		const TTime&  h = _system.getCoreExtTotalLength(i);
+		const TWidth& w = _system.getCoreWidth(i);
+		if( w > 0 )
+			lb_by_width.addRect(h, w);
 	}
 	lower_bound = lb_by_width.compute(_system.sys_TAM_width);
 
@@ -172,9 +173,9 @@ TTime
 Algorithm::computeUpperBound() const
 {
 	TTime upper_bound = 0;
-	for(size_t i=0; i<_system.test.size(); ++i)
+	for(size_t i=0; i<_system.getNumTests(); ++i)
 	{
-		const Test& ti = *_system.test[i];
+		const Test& ti = _system.getTest(i);
 		upper_bound += ti.length;
 	}
 	return upper_bound;
