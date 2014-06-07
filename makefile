@@ -2,6 +2,8 @@ include makefile.include
 
 TARGET = bin/TestScheduler 
 
+.PHONY: ${TARGET}
+
 all     : ${TARGET}
 
 clean   :

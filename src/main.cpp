@@ -12,7 +12,6 @@ int main(int argc, char* argv[]){
 		return 0;
 	}
 	System system;
-	system.init();
 	system.read_input(argv[1]);
 
 	Alg_Greedy alg(system);

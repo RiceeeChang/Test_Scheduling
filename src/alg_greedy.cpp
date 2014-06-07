@@ -170,7 +170,7 @@ Alg_Greedy::computeBusAssignment()
 	sort(vec_rect.begin(), vec_rect.end(), CoreRect::comp);
 
 	// Initialize
-	const TWidth& w_max = _system.sys_TAM_width;
+	const TWidth& w_max = _system.getTAMWidth();
 	TTime curr_h = 0;
 	// Implement Best Fit Decreasing Height Algorithm
 	// TODO TAM Assignment and Test scheduling should be put together
@@ -238,7 +238,7 @@ Alg_Greedy::computeSchedule(const ConstraintTable& cons_table)
 	TTime curr_h = 0, elapsed = 0;
 	while( !set_rect.empty() )
 	{	// Create a new bin
-		w_avail = _system.sys_power;
+		w_avail = _system.getMaxPower();
 		curr_h += elapsed;
 
 		// Find rectangles with top priority while meet width constraint

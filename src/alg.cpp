@@ -151,7 +151,7 @@ Algorithm::computeLowerBound() const
 			lb_by_power.addRect(ti.length, ti.power);
 	}
 
-	TTime tmp_lower = lb_by_power.compute(_system.sys_power);
+	TTime tmp_lower = lb_by_power.compute(_system.getMaxPower());
 
 	LowerBoundFor2SP<TTime, TWidth> lb_by_width;
 	for(size_t i=0; i<_system.getNumCores(); ++i)
@@ -161,7 +161,7 @@ Algorithm::computeLowerBound() const
 		if( w > 0 )
 			lb_by_width.addRect(h, w);
 	}
-	lower_bound = lb_by_width.compute(_system.sys_TAM_width);
+	lower_bound = lb_by_width.compute(_system.getTAMWidth());
 
 	if(lower_bound < tmp_lower)
 		lower_bound = tmp_lower;
