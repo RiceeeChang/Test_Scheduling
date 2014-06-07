@@ -1,0 +1,9 @@
+# Compiler settings
+CXX = g++
+DBGFLAGS = -g -D_DEBUG_ON_
+OPTFLAGS = -O2
+
+CXXFLAGS += ${DBGFLAGS} -Wall -Wno-long-long -pedantic
+CPPFLAGS += -MMD -MP
+
+LD = g++

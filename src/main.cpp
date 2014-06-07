@@ -1,28 +1,23 @@
-#include <cstdio>
-#include <cstdlib>
+#include <iostream>
+
+
+#include "alg_greedy.h"
 #include "test.h"
-#include "lowerbound.h"
-#include "greedy.h"
+
+using namespace std;
+
 int main(int argc, char* argv[]){
-    if(argc != 2){
-        printf("usage: TestScheduler <soc_name>");
-        return 0;
-    }
-    System system;
-    system.init();
-    system.read_input(argv[1]);
-    
-    printf("well read!!! \n");
-    printf("System: TAM = %d, Power = %d\n", system.sys_TAM_width, system.sys_power);
-    printf("cores = %d, bists = %d\n", system.cores.size(), system.bists.size());
+	if(argc != 2){
+		cout << "usage: TestScheduler <soc_name>" << endl;
+		return 0;
+	}
+	System system;
+	system.init();
+	system.read_input(argv[1]);
 
-    if(!system.bists[string("BIST_1")]->occupied)
-        printf("BIST_1\n");
-    //long int lb = lowerbound(system.test, system.sys_TAM_width, system.sys_power);
-    //printf("Lowerbound2 = %ld\n", lb);
-    
-    int length = greedy(system);
-    printf("Length = %d\n", length);
+	Alg_Greedy alg(system);
 
-    return 0;
+	cout << alg.run();
+
+	return 0;
 }

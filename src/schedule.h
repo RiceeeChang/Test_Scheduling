@@ -1,28 +1,70 @@
-#ifndef SCHEDULE_H
-#define SCHEDULE_H
+#ifndef __SCHEDULE_H
+#define __SCHEDULE_H
 
+#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "type_defs.h"
 
+class Test;
 class System;
 
-class Schedule{
+class CoreBus
+{
+friend std::ostream& operator << (std::ostream&, const CoreBus&);
+public:
 	typedef std::pair<TWidth, TWidth> BusBits;
-	typedef std::vector<BusBits> CoreAssignment;
-
-	typedef std::pair<TTime, TTime> Interval;
-	typedef std::vector<Interval> TestSchedule;
-
-	public:
-		TTime optimal_test_time;
-
-		std::vector<BusBits> TAM_assignment;
-		std::vector<TestSchedule> timestamps;
+	static bool isOverlap(const CoreBus&, const CoreBus&);
+public:
+	void addBusBits(const TWidth& begin, const TWidth& n)
+	{
+		TWidth end = begin + n - 1;
+		_bit_itvl.push_back( BusBits(begin, end) );
+	}
+private:
+	std::vector<BusBits> _bit_itvl;
 };
+std::ostream& operator << (std::ostream&, const CoreBus&);
 
-void write_output(const std::string& fname, const System& sys, const Schedule& sch);
+class TestSchedule
+{
+friend std::ostream& operator << (std::ostream&, const TestSchedule&);
+public:
+	typedef std::pair<TTime, TTime> Interval;
+public:
+	void addTimeInterval(const TTime& begin, const TTime& n)
+	{
+		TTime end = begin + n - 1;
+		_itvls.push_back( Interval(begin, end) );
+	}
+private:
+	std::vector<Interval> _itvls;
+};
+std::ostream& operator << (std::ostream&, const TestSchedule&);
+
+class Schedule{
+friend std::ostream& operator << (std::ostream&, const Schedule&);
+public:
+	Schedule(
+		const System& sys,
+		const TTime& opt_time,
+		const std::vector<CoreBus>& assign,
+		const std::vector<TestSchedule>& t_sch
+	): _system(sys), _optimal_test_time(opt_time),
+	_TAM_assignment(assign), _test_schedule(t_sch)
+	{}
+
+	~Schedule(){}
+
+private:
+	const System& _system;
+	TTime _optimal_test_time;
+
+	std::vector<CoreBus> _TAM_assignment;
+	std::vector<TestSchedule> _test_schedule;
+};
+std::ostream& operator << (std::ostream&, const Schedule&);
 
 #endif

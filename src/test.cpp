@@ -1,4 +1,13 @@
+
+#include <iostream>
+#include <fstream>
+#include <map>
+#include <cstring>
+#include <cstdlib>
+
 #include "test.h"
+
+using namespace std;
 
 Core::Core(const int& bits){
     for(int i = 0; i< bits; i++)
@@ -185,6 +194,7 @@ void System::read_input(const string& fname){
 				t->category = BIST;
 				t->core = c;
 				t->TAM_width = 0;
+				t->partition = 1;
 				while(p = strtok(NULL, delim)){
 					if(strcmp(p, "length") == 0){
 						p = strtok(NULL, delim);
@@ -193,6 +203,10 @@ void System::read_input(const string& fname){
 					else if(strcmp(p, "power") == 0){
 						p = strtok(NULL, delim);
 						t->power = atoi(p);
+					}
+					else if(strcmp(p, "partition") == 0){
+						p = strtok(NULL, delim);
+						t->partition = atoi(p);
 					}
 					else if(strcmp(p, "resource") == 0){
 						p = strtok(NULL, delim);
@@ -206,6 +220,9 @@ void System::read_input(const string& fname){
 		c++;
 	}
 	fin.close();
+
+	// Store precedence relation using index number
+	storePrecedence( precedence );
 }
 
 void System::print(){
@@ -232,3 +249,20 @@ void System::print(){
 	cout << "Total number of tests = " << test.size() << endl;
 }
 
+void System::storePrecedence(const vector< vector<string> >& prec_str){
+	map<string, size_t> str2ptr_map;
+
+	for(size_t i=0; i<test.size(); ++i){
+		const Test* ti = test[i];
+		str2ptr_map.insert(pair<string, size_t>(ti->name, i));
+	}
+
+	_vec_prec.resize( prec_str.size() );
+	for(size_t i=0; i<prec_str.size(); ++i){
+		_vec_prec[i].reserve( prec_str[i].size() );
+		for(size_t j=0; j<prec_str[i].size(); ++j){
+			size_t idx = str2ptr_map[prec_str[i][j]];
+			_vec_prec[i].push_back(idx);
+		}
+	}
+}
