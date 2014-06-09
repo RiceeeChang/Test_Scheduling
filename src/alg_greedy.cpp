@@ -1,40 +1,18 @@
 #include <algorithm>
+#include <map>
 #include <set>
 
 #include <iostream> //TODO
 
 #include "alg_greedy.h"
-#include "test.h"
 #include "schedule.h"
+#include "sequence_pair.h"
+#include "test.h"
 
 using namespace std;
 
 namespace
 {
-class CoreRect
-{
-public:
-	static bool comp(const CoreRect& r1, const CoreRect& r2)
-	{
-		if(r1._height != r2._height)
-			return r1._height > r2._height;
-		if(r1._width != r2._width)
-			return r1._width > r2._width;
-		return false;
-	}
-public:
-	CoreRect(const TCoreIndex& i,const TTime& h, const TWidth& w):
-	_idx(i), _height(h), _width(w){}
-	~CoreRect(){}
-
-	const TCoreIndex& coreIndex() const {return _idx;}
-	const TTime&  h() const {return _height;}
-	const TWidth& w() const {return _width;}
-private:
-	TCoreIndex _idx;
-	TTime  _height;
-	TWidth _width;
-};
 class CoreRectBin
 {
 friend class Comp;
@@ -57,7 +35,7 @@ public:
 	_curr_h(curr_h), _w_avail(w_avail){}
 	~CoreRectBin(){}
 
-	void addRect(const CoreRect& rect)
+	void addRect(const TAMSolution::CoreRect& rect)
 	{
 		assert( _w_avail >= rect.w() );
 		_w_avail -= rect.w();
@@ -133,7 +111,6 @@ private:
 	TPartition _remain_partition;
 	bool _begun;
 };
-
 }
 
 Alg_Greedy::Alg_Greedy(const System& sys):
@@ -143,79 +120,93 @@ Alg_Greedy::~Alg_Greedy(){}
 
 Schedule Alg_Greedy::run()
 {
-	vector<CoreBus> tam_assign = computeBusAssignment();
+	TAMSolution tam_sol = packCoreRectangle();
+
+	vector<CoreBus> tam_assign = buildTAMAssignment(tam_sol);
 
 	ConstraintTable cons_table = findPairWiseConstraints(tam_assign);
 
-	vector<TestSchedule> test_schedule = computeSchedule(cons_table);
+	MidSolution sol = packTestRectangle(cons_table);
+
+	vector<TestSchedule> test_schedule = buildSchedule(sol);
 
 	return Schedule(_system, _opt_time, tam_assign, test_schedule);
 }
 
-vector<CoreBus>
-Alg_Greedy::computeBusAssignment()
-{
-	vector<CoreBus> tam_assign;
-
-	// Collect Rectangles
+TAMSolution Alg_Greedy::packCoreRectangle()
+{	// Collect Rectangles
+	typedef TAMSolution::CoreRect CoreRect;
 	vector<CoreRect> vec_rect;
 	vec_rect.reserve( _system.getNumCores() );
 	for(size_t i=0; i<_system.getNumCores(); ++i)
 	{
 		const TTime&  h = _system.getCoreExtTotalLength(i);
 		const TWidth& w = _system.getCoreWidth(i);
-		if(w > 0)
+		if(w > 0) // Don't add cores use zero width
 			vec_rect.push_back( CoreRect(i, h, w) );
 	}
+	// Sort in decreasing order of height
 	sort(vec_rect.begin(), vec_rect.end(), CoreRect::comp);
 
 	// Initialize
 	const TWidth& w_max = _system.getTAMWidth();
 	TTime curr_h = 0;
 	// Implement Best Fit Decreasing Height Algorithm
-	// TODO TAM Assignment and Test scheduling should be put together
-	tam_assign.resize(_system.getNumCores());
-
-	set< CoreRectBin, CoreRectBin::Comp > bins;
+	typedef map< CoreRectBin, std::vector<size_t>, CoreRectBin::Comp > BinSet;
+	BinSet bin_set;
 	TWidth w_max_avail = 0;
 	for(size_t i=0; i<vec_rect.size(); ++i)
 	{
-		TWidth bit_begin = 0;
+		vector<size_t> rect_in_bin;
 		if( vec_rect[i].w() > w_max_avail )
 		{	// Create a new bin
 			// since vec_rect[i] doesn't fit into any bin
 			CoreRectBin new_bin(curr_h, w_max);
 			new_bin.addRect(vec_rect[i]);
-			bins.insert( new_bin );
+
+			rect_in_bin.push_back( i );
+			bin_set.insert(BinSet::value_type(new_bin, rect_in_bin));
 
 			curr_h += vec_rect[i].h();
 		}
 		else
-		{	// Find bin with min avail width 
+		{	// Find bin with least available width 
 			// that can accommodate vec_rect[i]
-			set<CoreRectBin>::iterator pos;
-			pos = bins.lower_bound(CoreRectBin(curr_h, vec_rect[i].w()));
-			assert( pos != bins.end() );
-			CoreRectBin tmp = *pos;
-			bins.erase(pos);
+			BinSet::iterator pos;
+			pos = bin_set.lower_bound(CoreRectBin(curr_h, vec_rect[i].w()));
+			assert( pos != bin_set.end() );
+			CoreRectBin bin = pos->first;
+			swap(rect_in_bin, pos->second);
+			bin_set.erase(pos);
 
-			bit_begin = w_max - tmp.availWidth();
-			tmp.addRect(vec_rect[i]);
-			bins.insert( tmp );
+			bin.addRect(vec_rect[i]);
+			rect_in_bin.push_back( i );
+			bin_set.insert( BinSet::value_type(bin, rect_in_bin) );
 		}
 		// Find maximum of available width
-		w_max_avail = (bins.rbegin())->availWidth();
-		// Assign Bus for core
-		const TCoreIndex& idx = vec_rect[i].coreIndex();
-		TWidth len = vec_rect[i].w();
-		tam_assign[idx].addBusBits(bit_begin, len);
+		w_max_avail = (bin_set.rbegin())->first.availWidth();
 	}
 
-	return tam_assign;
+	// Construct sequence pair
+	vector<size_t> loci_pos, loci_neg;
+	loci_pos.reserve( vec_rect.size() );
+	loci_neg.reserve( vec_rect.size() );
+	for(BinSet::iterator it=bin_set.begin(); it!=bin_set.end(); ++it)
+	{
+		const vector<size_t>& rect_in_bin = it->second;
+		for(vector<size_t>::const_reverse_iterator rit=rect_in_bin.rbegin();
+			rit!=rect_in_bin.rend(); ++rit)
+		{	loci_pos.push_back(*rit);}
+		for(size_t i=0; i<rect_in_bin.size(); ++i)
+		{	loci_neg.push_back(rect_in_bin[i]);}
+	}
+	assert(loci_pos.size() == vec_rect.size());
+	assert(loci_neg.size() == vec_rect.size());
+
+	return TAMSolution(vec_rect, SequencePair(loci_pos, loci_neg));
 }
 
-vector<TestSchedule>
-Alg_Greedy::computeSchedule(const ConstraintTable& cons_table)
+MidSolution Alg_Greedy::packTestRectangle(const ConstraintTable& cons_table)
 {	// Collect Rectangles
 	typedef set<TestRect, TestRect::Comp> RectSet;
 	RectSet set_rect;
@@ -227,19 +218,18 @@ Alg_Greedy::computeSchedule(const ConstraintTable& cons_table)
 		set_rect.insert(new_rect);
 	}
 
-	// TODO TAM Assignment and Test scheduling should be put together
-	vector<TestSchedule> test_schedule;
-	test_schedule.resize(_system.getNumTests());
+	vector<MidSolution::PartedTest> vec_part_rect;
+	// TODO vec_part_rect.reserve(_system.getNumTotalPartions());
 
+	// Vector to record if a test is completed
 	vector<bool> completed;
 	completed.resize(_system.getNumTests(), false);
 
-	TPower w_avail;
-	TTime curr_h = 0, elapsed = 0;
+	TTime curr_h = 0;
+	vector<size_t> bin;
 	while( !set_rect.empty() )
 	{	// Create a new bin
-		w_avail = _system.getMaxPower();
-		curr_h += elapsed;
+		TPower w_avail = _system.getMaxPower();
 
 		// Find rectangles with top priority while meet width constraint
 		vector<TestRect> scheduled;
@@ -270,6 +260,7 @@ Alg_Greedy::computeSchedule(const ConstraintTable& cons_table)
 		}
 		assert( !scheduled.empty() );
 
+		TTime elapsed;
 		{	// Find height for this bin
 			TTime must_elapse = 0;
 			TTime may_elapse = scheduled[0].h();
@@ -288,21 +279,135 @@ Alg_Greedy::computeSchedule(const ConstraintTable& cons_table)
 		for(size_t i=0; i<scheduled.size(); ++i)
 		{
 			const size_t& tid = scheduled[i].id();
-			test_schedule[tid].addTimeInterval(curr_h, elapsed);
-			scheduled[i].preempt( elapsed );
-			if( scheduled[i].h() > 0 )
+			// TODO record test
+			if( scheduled[i].h() > elapsed )
+			{
+				MidSolution::PartedTest tmp(tid, curr_h, elapsed);
+				vec_part_rect.push_back(tmp);
+				scheduled[i].preempt( elapsed );
 				set_rect.insert( scheduled[i] );
+			}
 			else
+			{
+				MidSolution::PartedTest tmp(tid, curr_h, scheduled[i].h());
+				vec_part_rect.push_back(tmp);
+				scheduled[i].preempt( elapsed );
 				completed[tid] = true;
+			}
 		}
+		curr_h += elapsed; // Increase time stamp
 	}
 	// Record found test time usage
-	_opt_time = curr_h + elapsed;
+	_opt_time = curr_h;
 
-	return test_schedule;
+	// Construct sequence pair
+	vector<size_t> loci_pos, loci_neg;
+	size_t bin_begin = 0;
+	TTime bin_x = vec_part_rect[0].x;
+	loci_pos.reserve( vec_part_rect.size() );
+	loci_neg.reserve( vec_part_rect.size() );
+	for(size_t i=0; i<vec_part_rect.size(); ++i)
+	{
+		if(vec_part_rect[i].x > bin_x
+		|| i+1 == vec_part_rect.size())
+		{	// Bin is changed
+			{	// Do reverse
+				size_t begin = bin_begin, end = i;
+				size_t mid = (begin+end)/2;
+				while(begin < mid)
+				{
+					--end;
+					swap(loci_pos[begin], loci_pos[end]);
+					++begin;
+				}
+			}
+			bin_x = vec_part_rect[i].x;
+			bin_begin = i;
+		}
+		loci_pos.push_back( i );
+		loci_neg.push_back( i );
+	}
+	assert(loci_pos.size() == vec_part_rect.size());
+	assert(loci_neg.size() == vec_part_rect.size());
+
+	return MidSolution(vec_part_rect, SequencePair(loci_pos, loci_neg));
 }
 
-Alg_Greedy::ConstraintTable
+vector<CoreBus>
+Alg_Greedy::buildTAMAssignment(const TAMSolution& tam_sol)
+{
+	const SequencePair& seq_pair = tam_sol.getSequencePair();
+	const vector<TAMSolution::CoreRect> rects =
+		tam_sol.getCoreRects();
+
+	vector<TWidth> core_y, max_y;
+	core_y.resize(seq_pair.size());
+	max_y.resize(seq_pair.size(), 0);
+
+	// Consturct Weighted Longest Common Subsequence
+	const vector<size_t>& pos_loci = seq_pair.getPositiveLoci();
+	for(vector<size_t>::const_reverse_iterator it = pos_loci.rbegin();
+		it != pos_loci.rend(); ++it)
+	{	// In reverse order
+		const size_t& r_i = *it;
+		const size_t& i_neg = seq_pair.findNegative(r_i);
+
+		core_y[ r_i ] = max_y[ i_neg ];
+		TWidth new_max_y = max_y[ i_neg ] + rects[r_i].w();
+
+		for(size_t j=i_neg; j<seq_pair.size(); ++j)
+			if(new_max_y > max_y[j]) max_y[j] = new_max_y;
+			else break;
+	}
+
+	vector<CoreBus> tam_assign;
+	tam_assign.resize(_system.getNumCores());
+	for(size_t i=0; i<core_y.size(); ++i)
+	{
+		const TCoreIndex& cid = rects[i].coreIndex();
+		tam_assign[cid].addBusBits(core_y[i], rects[i].w());
+	}
+	return tam_assign;
+}
+
+vector<TestSchedule>
+Alg_Greedy::buildSchedule(const MidSolution& sol)
+{
+	const SequencePair& seq_pair = sol.getSequencePair();
+
+	vector<TTime> max_x;
+	max_x.resize(seq_pair.size(), 0);
+
+	TTime new_max_x = 0;
+	// Consturct Weighted Longest Common Subsequence
+	const vector<size_t>& pos_loci = seq_pair.getPositiveLoci();
+	for(vector<size_t>::const_iterator it = pos_loci.begin();
+		it != pos_loci.end(); ++it)
+	{	// In normal order
+		const size_t& c_i = *it;
+		const size_t& i_neg = seq_pair.findNegative(c_i);
+
+		sol[c_i].x = max_x[ i_neg ];
+		new_max_x = max_x[ i_neg ] + sol[c_i].length;
+
+		for(size_t j=i_neg; j<seq_pair.size(); ++j)
+			if(new_max_x > max_x[j]) max_x[j] = new_max_x;
+			else break;
+	}
+
+	_opt_time = new_max_x;
+
+	vector<TestSchedule> t_sch;
+	t_sch.resize(_system.getNumTests());
+	for(size_t i=0; i<sol.size(); ++i)
+	{
+		const size_t& tid = sol[i].test_id;
+		t_sch[tid].addTimeInterval(sol[i].x, sol[i].length);
+	}
+	return t_sch;
+}
+
+ConstraintTable
 Alg_Greedy::findPairWiseConstraints(const vector<CoreBus>& tam_assign)
 {
 	ConstraintTable cons_table(_system.getNumTests());

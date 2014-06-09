@@ -3,7 +3,7 @@ CXX = g++
 DBGFLAGS = -g -D_DEBUG_ON_
 OPTFLAGS = -O2
 
-CXXFLAGS += ${DBGFLAGS} -Wall -Wno-long-long -pedantic
+CXXFLAGS += ${DBGFLAGS} -Wall -Wno-long-long -ansi -pedantic
 CPPFLAGS += -MMD -MP
 
 LD = g++
