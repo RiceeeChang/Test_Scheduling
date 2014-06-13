@@ -38,7 +38,11 @@ public:
 public:
 	ConstraintTable(const size_t& n):
 	_num_elems(n)
-	{	_cons.resize(n*(n-1)/2, NONE);}
+	{
+		_cons.resize(n*(n+1)/2, NONE);
+		for(size_t i=0; i<n; ++i)
+			setSameResource(i, i);
+	}
 	~ConstraintTable(){}
 
 	void setPrecedence(const size_t& a, const size_t& b)
@@ -59,8 +63,10 @@ public:
 			case SAME_RSRC:
 				break;
 			case FW_PREC:
+				assert(a != b);
 				ret = (a<b)? FW_PREC:BW_PREC; break;
 			case BW_PREC:
+				assert(a != b);
 				ret = (a<b)? BW_PREC:FW_PREC; break;
 			default: assert(false);
 		}
@@ -94,10 +100,9 @@ private:
 
 	static size_t getID(const size_t& i, const size_t& j)
 	{
-		assert(i != j);
 		size_t c_min = (i<j)? i: j; 
 		size_t c_max = (i>j)? i: j; 
-		return c_max*(c_max-1)/2 + c_min;
+		return c_max*(c_max+1)/2 + c_min;
 	}
 };
 
@@ -133,9 +138,13 @@ public:
 	TAMSolution(
 		const std::vector<CoreRect>& r,
 		const SequencePair& sp
-	): _rects(r), _seq_pair(sp){}
+	): _rects(r), _seq_pair(sp)
+	{assert(_seq_pair.size() == _rects.size());}
 	~TAMSolution(){}
 
+	bool  checkTAMWidth (const TWidth&) const;
+	bool  checkTAMWidth (const TWidth&, const SequencePair&) const;
+	TTime getRequiredTime() const;
 	const std::vector<CoreRect>& getCoreRects() const
 	{	return _rects;}
 	const SequencePair& getSequencePair() const
@@ -150,13 +159,22 @@ private:
 class MidSolution
 {
 public:
+	// TODO Reduce repeat data structure
 	typedef struct PartedTest
 	{
-		PartedTest(const size_t& tid, const TTime& b, const TTime& l)
-		: test_id(tid), x(b), length(l){}
+	public:
+		PartedTest(
+			const size_t& tid, const TTime& b,
+			const TTime& l, const TPower& w)
+		: test_id(tid), x(b), length(l), width(w){}
+		const size_t& getTestId() const {return test_id;}
+		const TTime&  h() const {return length;}
+		const TPower& w() const {return width;}
+
 		size_t test_id;
 		mutable TTime  x;
 		TTime  length;
+		TPower width;
 	}PartedTest;
 public:
 	MidSolution(
@@ -165,12 +183,19 @@ public:
 	): _rects(r), _seq_pair(sp){}
 	~MidSolution(){}
 
+	bool  checkPower (const TPower&) const;
+	bool  checkPower (const TPower&, const SequencePair&) const;
+	TTime getRequiredTime() const;
 	size_t size() const {return _rects.size();}
 	const PartedTest& operator [] (const size_t& i) const
 	{	return _rects[i];}
+	const std::vector<PartedTest>& getPartedTestRects() const
+	{	return _rects;}
 	const SequencePair& getSequencePair() const
 	{	return _seq_pair;}
-
+	void swapSequencePair(SequencePair& seq)
+	{	SequencePair::swap(_seq_pair, seq);}
+private:
 	std::vector<PartedTest> _rects;
 	SequencePair _seq_pair; 
 };

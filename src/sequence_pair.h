@@ -34,6 +34,16 @@ public:
 	const size_t& findNegative(const size_t& a) const
 	{	return _loci_idx[a]._neg;}
 
+	// check if a at b's left
+	bool left(const size_t& a, const size_t& b) const
+	{	return _loci_idx[a]._pos < _loci_idx[b]._pos
+			&& _loci_idx[a]._neg < _loci_idx[b]._neg;
+	}
+	bool below(const size_t& a, const size_t& b) const
+	{	return _loci_idx[a]._pos > _loci_idx[b]._pos
+			&& _loci_idx[a]._neg < _loci_idx[b]._neg;
+	}
+
 private:
 	std::vector<size_t> _loci_pos, _loci_neg;
 	std::vector<LociIdx> _loci_idx;

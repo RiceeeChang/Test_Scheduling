@@ -1,7 +1,7 @@
-#include <iostream>
+#include <fstream>
 
 
-#include "alg_greedy.h"
+#include "alg_sa.h"
 #include "test.h"
 
 using namespace std;
@@ -14,9 +14,14 @@ int main(int argc, char* argv[]){
 	System system;
 	system.read_input(argv[1]);
 
-	Alg_Greedy alg(system);
+	cout << "Cores: " << system.getNumCores() << endl;
+	cout << "Tests: " << system.getNumTests() << endl;
 
-	cout << alg.run();
+	Alg_SA alg(system);
+	//Alg_Greedy alg(system);
 
+	ofstream fout("log.txt");
+	fout << alg.run();
+	fout.close();
 	return 0;
 }

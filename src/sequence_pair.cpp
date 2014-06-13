@@ -58,24 +58,24 @@ SequencePair::SequencePair(
 
 void SequencePair::swapPositive(const size_t& a, const size_t& b)
 {
-	size_t& a_pos = _loci_idx[a]._pos;
-	size_t& b_pos = _loci_idx[b]._pos;
+	const size_t& a_pos = _loci_idx[a]._pos;
+	const size_t& b_pos = _loci_idx[b]._pos;
 	std::swap(_loci_pos[a_pos], _loci_pos[b_pos]);
-	std::swap(a_pos, b_pos);
+	std::swap(_loci_idx[a]._pos, _loci_idx[b]._pos);
 
-	assert(_loci_pos[a_pos] == a);
-	assert(_loci_pos[b_pos] == b);
+	assert(_loci_pos[_loci_idx[a]._pos] == a);
+	assert(_loci_pos[_loci_idx[b]._pos] == b);
 }
 
 void SequencePair::swapNegative(const size_t& a, const size_t& b)
 {
-	size_t& a_neg = _loci_idx[a]._neg;
-	size_t& b_neg = _loci_idx[b]._neg;
+	const size_t& a_neg = _loci_idx[a]._neg;
+	const size_t& b_neg = _loci_idx[b]._neg;
 	std::swap(_loci_neg[a_neg], _loci_neg[b_neg]);
-	std::swap(a_neg, b_neg);
+	std::swap(_loci_idx[a]._neg, _loci_idx[b]._neg);
 
-	assert(_loci_neg[a_neg] == a);
-	assert(_loci_neg[b_neg] == b);
+	assert(_loci_neg[_loci_idx[a]._neg] == a);
+	assert(_loci_neg[_loci_idx[b]._neg] == b);
 }
 
 void SequencePair::swapBoth(const size_t& a, const size_t& b)

@@ -219,14 +219,14 @@ MidSolution Alg_Greedy::packTestRectangle(const ConstraintTable& cons_table)
 	}
 
 	vector<MidSolution::PartedTest> vec_part_rect;
-	// TODO vec_part_rect.reserve(_system.getNumTotalPartions());
 
 	// Vector to record if a test is completed
 	vector<bool> completed;
 	completed.resize(_system.getNumTests(), false);
 
 	TTime curr_h = 0;
-	vector<size_t> bin;
+	vector<size_t> size_of_bins;
+	size_of_bins.push_back(0);
 	while( !set_rect.empty() )
 	{	// Create a new bin
 		TPower w_avail = _system.getMaxPower();
@@ -259,6 +259,7 @@ MidSolution Alg_Greedy::packTestRectangle(const ConstraintTable& cons_table)
 			}
 		}
 		assert( !scheduled.empty() );
+		size_of_bins.push_back( scheduled.size() + size_of_bins.back() );
 
 		TTime elapsed;
 		{	// Find height for this bin
@@ -279,17 +280,17 @@ MidSolution Alg_Greedy::packTestRectangle(const ConstraintTable& cons_table)
 		for(size_t i=0; i<scheduled.size(); ++i)
 		{
 			const size_t& tid = scheduled[i].id();
-			// TODO record test
+			// Record test
 			if( scheduled[i].h() > elapsed )
 			{
-				MidSolution::PartedTest tmp(tid, curr_h, elapsed);
+				MidSolution::PartedTest tmp(tid, curr_h, elapsed, scheduled[i].w());
 				vec_part_rect.push_back(tmp);
 				scheduled[i].preempt( elapsed );
 				set_rect.insert( scheduled[i] );
 			}
 			else
 			{
-				MidSolution::PartedTest tmp(tid, curr_h, scheduled[i].h());
+				MidSolution::PartedTest tmp(tid, curr_h, scheduled[i].h(), scheduled[i].w());
 				vec_part_rect.push_back(tmp);
 				scheduled[i].preempt( elapsed );
 				completed[tid] = true;
@@ -302,31 +303,18 @@ MidSolution Alg_Greedy::packTestRectangle(const ConstraintTable& cons_table)
 
 	// Construct sequence pair
 	vector<size_t> loci_pos, loci_neg;
-	size_t bin_begin = 0;
-	TTime bin_x = vec_part_rect[0].x;
 	loci_pos.reserve( vec_part_rect.size() );
 	loci_neg.reserve( vec_part_rect.size() );
+	size_t j = 1;
 	for(size_t i=0; i<vec_part_rect.size(); ++i)
 	{
-		if(vec_part_rect[i].x > bin_x
-		|| i+1 == vec_part_rect.size())
-		{	// Bin is changed
-			{	// Do reverse
-				size_t begin = bin_begin, end = i;
-				size_t mid = (begin+end)/2;
-				while(begin < mid)
-				{
-					--end;
-					swap(loci_pos[begin], loci_pos[end]);
-					++begin;
-				}
-			}
-			bin_x = vec_part_rect[i].x;
-			bin_begin = i;
-		}
-		loci_pos.push_back( i );
+		size_t pos_id = (size_of_bins[j] - 1) - i + size_of_bins[j-1];
+		loci_pos.push_back( pos_id );
 		loci_neg.push_back( i );
+		if( i == (size_of_bins[j]-1) )
+			++j;
 	}
+	assert( j==size_of_bins.size() );
 	assert(loci_pos.size() == vec_part_rect.size());
 	assert(loci_neg.size() == vec_part_rect.size());
 
@@ -374,35 +362,38 @@ vector<TestSchedule>
 Alg_Greedy::buildSchedule(const MidSolution& sol)
 {
 	const SequencePair& seq_pair = sol.getSequencePair();
+	const vector<MidSolution::PartedTest> rects =
+		sol.getPartedTestRects();
 
 	vector<TTime> max_x;
-	max_x.resize(seq_pair.size(), 0);
+	vector<TTime> test_x;
+	max_x.resize(rects.size(), 0);
+	test_x.resize(rects.size());
 
-	TTime new_max_x = 0;
 	// Consturct Weighted Longest Common Subsequence
 	const vector<size_t>& pos_loci = seq_pair.getPositiveLoci();
 	for(vector<size_t>::const_iterator it = pos_loci.begin();
 		it != pos_loci.end(); ++it)
 	{	// In normal order
-		const size_t& c_i = *it;
-		const size_t& i_neg = seq_pair.findNegative(c_i);
+		const size_t& r_i = *it;
+		const size_t& i_neg = seq_pair.findNegative(r_i);
 
-		sol[c_i].x = max_x[ i_neg ];
-		new_max_x = max_x[ i_neg ] + sol[c_i].length;
+		test_x[r_i] = max_x[ i_neg ];
+		TTime new_max_x = max_x[ i_neg ] + rects[r_i].h();
 
 		for(size_t j=i_neg; j<seq_pair.size(); ++j)
 			if(new_max_x > max_x[j]) max_x[j] = new_max_x;
 			else break;
 	}
 
-	_opt_time = new_max_x;
+	_opt_time = max_x.back();
 
 	vector<TestSchedule> t_sch;
 	t_sch.resize(_system.getNumTests());
 	for(size_t i=0; i<sol.size(); ++i)
 	{
-		const size_t& tid = sol[i].test_id;
-		t_sch[tid].addTimeInterval(sol[i].x, sol[i].length);
+		const size_t& tid = rects[i].getTestId();
+		t_sch[tid].addTimeInterval(test_x[i], rects[i].h());
 	}
 	return t_sch;
 }
