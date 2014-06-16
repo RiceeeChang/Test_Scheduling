@@ -89,6 +89,7 @@ MidSolution::checkPower(const TPower& bound) const
 bool
 MidSolution::checkPower(const TPower& bound, const SequencePair& seq_pair) const
 {	// TODO consider to use faster algorithm
+	// TODO Check cumulative power instead
 	// TODO Reduce repeat code
 	vector<TPower> max_y;
 	max_y.resize(seq_pair.size(), 0);

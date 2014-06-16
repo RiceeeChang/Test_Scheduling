@@ -34,11 +34,7 @@ friend std::ostream& operator << (std::ostream&, const TestSchedule&);
 public:
 	typedef std::pair<TTime, TTime> Interval;
 public:
-	void addTimeInterval(const TTime& begin, const TTime& n)
-	{
-		TTime end = begin + n - 1;
-		_itvls.push_back( Interval(begin, end) );
-	}
+	void addTimeInterval(const TTime&, const TTime&);
 private:
 	std::vector<Interval> _itvls;
 };

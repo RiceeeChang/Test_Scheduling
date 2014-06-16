@@ -323,7 +323,7 @@ MidSolution Alg_Greedy::packTestRectangle(const ConstraintTable& cons_table)
 
 vector<CoreBus>
 Alg_Greedy::buildTAMAssignment(const TAMSolution& tam_sol)
-{
+{	// TODO Reduce repeat code
 	const SequencePair& seq_pair = tam_sol.getSequencePair();
 	const vector<TAMSolution::CoreRect> rects =
 		tam_sol.getCoreRects();
@@ -360,7 +360,7 @@ Alg_Greedy::buildTAMAssignment(const TAMSolution& tam_sol)
 
 vector<TestSchedule>
 Alg_Greedy::buildSchedule(const MidSolution& sol)
-{
+{	// TODO Reduce repeat code
 	const SequencePair& seq_pair = sol.getSequencePair();
 	const vector<MidSolution::PartedTest> rects =
 		sol.getPartedTestRects();
