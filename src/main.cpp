@@ -32,6 +32,8 @@ int main(int argc, char* argv[]){
 	Alg_SA alg(system);
 	//Alg_Greedy alg(system);
 
+	cout << "Lower Bound: " << alg.getLowerBound() << endl;
+
 	ofstream fout(getOutputName(argv[1]).c_str());
 	fout << alg.run();
 	fout.close();

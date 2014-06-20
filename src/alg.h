@@ -13,7 +13,7 @@ public:
 	virtual ~Algorithm() = 0;
 
 	virtual Schedule run() = 0;
-protected:
+	
 	const TTime& getLowerBound() const {return _lower;}
 	const TTime& getUpperBound() const {return _upper;}
 private:
